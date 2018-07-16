@@ -63,7 +63,8 @@ int main() {
 	//normalizing data
 	for (int i = 0; i < X.size(); i++) {
 		for (int j = 0; j < X[0].size() - 1; j++) {
-			X[i][j] = 2*(X[i][j] / 16) - 1;
+			X[i][j] = 2 * (X[i][j] / 16) - 1;
+			//X[i][j] = X[i][j] / 16;
 		}
 		//X[i][X[0].size()-1] /= 9;
 	}
@@ -98,21 +99,24 @@ int main() {
 	//training
 	int MAX_ITER = 10;
 	int NCLASS = 10;
-	double LEARNINGRATE = -0.001;
-	int BATCHSIZE = 1437;
+	double LEARNINGRATE = 0.0001;
+	int BATCHSIZE = 1;
 	vector<vector<double>> W(NCLASS, vector<double>(x_train[0].size(),0)); //10x64
-	vector<vector<double>> b(NCLASS, vector<double>(1,0)); //10x1
+	vector<vector<double>> b(NCLASS, vector<double>(1,0.01)); //10x1
 
 	//random W initialization
 	for (int c = 0; c < NCLASS; c++) {
 		for (int s = 0; s < x_train[0].size(); s++) {
 			W[c][s] = 2 * ((double)rand() / RAND_MAX) - 1;
+			//W[c][s] = (double)rand() / RAND_MAX;
 		}
 	}
 
 	vector<vector<double>> x_train_shf(x_train.size(), vector<double>(x_train[0].size(), 0));
 	vector<vector<double>> y_train_shf(y_train.size(), vector<double>(y_train[0].size(), 0));
 	int iter = 0;
+	double avg_tr_acc = 0;
+	int num_tr_acc = 0;
 	while(iter < MAX_ITER){
 		//shuffle data
 		std::vector<int> indexes;
@@ -145,11 +149,16 @@ int main() {
 			double loss = computeLoss(y_one_hot, Y_pred);
 			vector<vector<double>> y_pred_f = thr_label(Y_pred);
 			double tr_acc = accuracy(y_pred_f, y_train_shf_b);
-			cout << "Accuracy and loss for iteration " << iter << " and batch " << bs << " are " << tr_acc << "\t" << loss << endl;
+			avg_tr_acc += tr_acc;
+			num_tr_acc++;
+			printf("iter = %2d \t batch = %4d \t acc = %.3f \t loss = %.4f\n", iter, bs, tr_acc, loss);
+			//cout << "iter = " << iter << "\t batch = " << bs << "\t acc = " << tr_acc << "\t loss = " << loss << endl;
 		}
 		iter++;
 	}
-	cout << "Training Done!" << endl;
+	avg_tr_acc /= num_tr_acc;
+	std::cout << "Average train accuracy = " << avg_tr_acc << endl;
+	std::cout << "Training Done!" << endl;
 
 	vector<vector<double>> Z_test = my_feed_forward(W, b, x_test); //10xn
 	vector<vector<double>> y_pred_test = activation(Z_test); //10xn
@@ -293,7 +302,7 @@ vector<vector<double>> one_hot(vector<vector<double>> y, int NCLASS) {
 }
 
 
-vector<vector<double>> computeError(vector<vector<double>> y, vector<vector<double>> y_pred) {
+/*vector<vector<double>> computeError(vector<vector<double>> y, vector<vector<double>> y_pred) {
 	assert(y.size() == y_pred.size());
 	assert(y[0].size() == y_pred[0].size());
 	//y = 10xn
@@ -306,9 +315,9 @@ vector<vector<double>> computeError(vector<vector<double>> y, vector<vector<doub
 		}
 	}
 	return err;
-}
+}*/
 
-double computeCost(vector<vector<double>>y, vector<vector<double>>y_pred) {
+/*double computeCost(vector<vector<double>>y, vector<vector<double>>y_pred) {
 	//y = nx1
 	//y_pred = nx1
 	double c = 0;
@@ -316,7 +325,7 @@ double computeCost(vector<vector<double>>y, vector<vector<double>>y_pred) {
 		c += 0.5 * pow(y[n][0] - y_pred[n][0], 2);
 	}
 	return c;
-}
+}*/
 
 vector<vector<double>> thr_label(vector<vector<double>>y) {
 	//This function threshold the output value (0.5) and reverse one_hot.
@@ -360,7 +369,7 @@ vector<vector<double>> gradient_w(vector<vector<double>> X, vector<vector<double
 	for (int c = 0; c < Y.size(); c++) {
 		for (int f = 0; f < X[0].size(); f++) {
 			for (int n = 0; n < Y[0].size(); n++) {
-				dW[c][f] += (Y_hat[c][n] - Y[c][n]) * (Y_hat[c][n]) * (1 - Y_hat[c][n]) * X[n][f];
+				dW[c][f] += (Y[c][n] - Y_hat[c][n]) * (Y_hat[c][n]) * (1 - Y_hat[c][n]) * X[n][f];
 			}
 		}
 	}
@@ -373,7 +382,7 @@ vector<vector<double>> gradient_b(vector<vector<double>> Y, vector<vector<double
 	vector<vector<double>> db(Y.size(), vector<double>(1, 0));
 	for (int c = 0; c < Y.size(); c++) {
 		for (int n = 0; n < Y[0].size(); n++) {
-			db[c][0] += (Y_hat[c][n] - Y[c][n]) * (Y_hat[c][n]) * (1 - Y_hat[c][n]);
+			db[c][0] += (Y[c][n] - Y_hat[c][n]) * (Y_hat[c][n]) * (1 - Y_hat[c][n]);
 		}
 	}
 	return db;

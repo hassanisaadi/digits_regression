@@ -25,7 +25,7 @@ In order optimize the loss function using gradient descent, we need to calculate
 
 where
 
-![all text](./img/sigmoid)
+![all text](./img/sigmoid.gif)
 
 
 # Memory Usage
